@@ -1,0 +1,71 @@
+# Model Configuration
+model:
+  weights_path: "weights/yolov8n.pt"
+  confidence_threshold: 0.3
+  iou_threshold: 0.5
+  device: "cpu"  # Use 'cuda' if GPU available
+  classes: [0, 2]  # 0: person, 2: car (COCO dataset)
+  
+# Tracking Configuration
+tracking:
+  tracker_type: "bytetrack"  # bytetrack, botsort
+  track_activation_threshold: 0.25
+  lost_track_buffer: 30
+  minimum_matching_threshold: 0.8
+  minimum_consecutive_frames: 1
+
+# Counting Configuration
+counting:
+  line_counting:
+    enabled: true
+    lines:
+      - name: "line_1"
+        start: [100, 300]
+        end: [500, 300]
+        count_in: true
+        count_out: true
+  
+  zone_counting:
+    enabled: true
+    zones:
+      - name: "zone_1"
+        polygon: [[200, 100], [600, 100], [600, 400], [200, 400]]
+        count_in: true
+        count_out: true
+
+# Visualization Configuration
+visualization:
+  show_display: true
+  display_fps: true
+  display_count: true
+  thickness: 2
+  text_scale: 0.6
+  text_thickness: 2
+  
+  colors:
+    person: [0, 255, 0]      # Green
+    car: [255, 0, 0]         # Blue
+    line: [0, 255, 255]      # Yellow
+    zone: [255, 0, 255]      # Magenta
+
+# Output Configuration
+output:
+  save_video: true
+  save_images: false
+  save_reports: true
+  output_video_codec: "mp4v"
+  output_video_fps: 30
+  report_format: "json"  # json, csv
+
+# Performance Configuration
+performance:
+  resize_frame: true
+  target_width: 1280
+  target_height: 720
+  skip_frames: 0  # Skip every N frames (0 = no skip)
+  use_half_precision: false  # FP16 for faster inference on GPU
+
+# Input Configuration
+input:
+  source: "inputs/videos/sample.mp4"  # path to video/image or 0 for webcam
+  source_type: "video"  # video, image, webcam

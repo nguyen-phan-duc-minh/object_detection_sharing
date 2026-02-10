@@ -1,0 +1,14 @@
+# Core dependencies
+ultralytics==8.1.0
+opencv-python==4.9.0.80
+numpy==1.24.3
+supervision==0.18.0
+
+# Configuration & Logging
+PyYAML==6.0.1
+
+# Performance optimization
+lap==0.4.0
+
+# Utilities
+tqdm==4.66.1
