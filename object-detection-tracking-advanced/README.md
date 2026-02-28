@@ -36,6 +36,8 @@ object-detection-tracking-advanced/
 pip install -r requirements.txt
 ```
 
+**Lưu ý**: Các thư mục cần thiết (`inputs`, `outputs`, `logs`, `models`) sẽ được tự động tạo khi chạy application.
+
 ## Cấu hình
 
 ### 1. Sử dụng YAML (khuyến nghị cho settings cơ bản)

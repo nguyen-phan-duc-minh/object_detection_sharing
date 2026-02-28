@@ -3,7 +3,6 @@ import yaml
 from pathlib import Path
 from dotenv import load_dotenv
 
-
 def load_settings():
     env_path = Path(".env")
     if env_path.exists():
@@ -38,7 +37,8 @@ def load_settings():
     if os.getenv("DETECTOR_MAX_DET"):
         settings["detector"]["max_det"] = int(os.getenv("DETECTOR_MAX_DET"))
     if os.getenv("DETECTOR_DEVICE"):
-        settings["detector"]["device"] = os.getenv("DETECTOR_DEVICE")
+        device_str = os.getenv("DETECTOR_DEVICE")
+        settings["detector"]["device"] = None if device_str.lower() == "null" else device_str
     if os.getenv("DETECTOR_CLASSES"):
         # Parse comma-separated class IDs
         classes_str = os.getenv("DETECTOR_CLASSES")
