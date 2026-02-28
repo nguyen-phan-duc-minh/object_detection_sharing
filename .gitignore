@@ -42,9 +42,6 @@ outputs/
 logs/
 *.log
 
-# Models (optional - uncomment if you don't want to track models)
-# models/*.pt
-
 # Temporary files
 *.tmp
 *.bak

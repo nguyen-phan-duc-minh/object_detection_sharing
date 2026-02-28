@@ -1,310 +1,201 @@
-# Object Detection Pipeline - Production Ready
+# Object Detection and Tracking - Advanced
 
-Hệ thống Object Detection + Tracking + Counting chuẩn production với YOLOv8 và ByteTrack.
+Phiên bản nâng cao của hệ thống phát hiện và theo dõi đối tượng với YOLO.
 
-## ✨ Tính năng
+## Cấu trúc dự án
 
-- ✅ **Object Detection**: YOLOv8n (tối ưu cho CPU)
-- ✅ **Object Tracking**: ByteTrack tracking
-- ✅ **Line Counting**: Đếm đối tượng qua đường kẻ
-- ✅ **Zone Counting**: Đếm đối tượng vào/ra zone
-- ✅ **Real-time Display**: Hiển thị trực tiếp kết quả
-- ✅ **JSON Reports**: Báo cáo chi tiết JSON
-- ✅ **FPS Optimization**: Tối ưu cho CPU
-- ✅ **Production Logging**: Hệ thống logging đầy đủ
-- ✅ **Flexible Configuration**: YAML config
-
-## 📋 Yêu cầu hệ thống
-
-- Python 3.8+
-- CPU (hoặc GPU CUDA để tăng tốc)
-- 4GB RAM
-- macOS / Linux / Windows
-
-## 🚀 Cài đặt
-
-### 1. Clone/Download project
-
-```bash
-cd object-detection-courses
+```
+object-detection-tracking-advanced/
+├── config/
+│   ├── logging.yaml          # Cấu hình logging
+│   └── settings.yaml         # Cấu hình chính
+├── core/
+│   ├── logging_setup.py      # Thiết lập logging
+│   └── settings_loader.py    # Load cấu hình
+├── src/
+│   ├── detector/
+│   │   └── detector.py       # YOLODetector với tracking
+│   ├── saver/
+│   │   └── saver.py          # Lưu kết quả
+│   ├── counter/
+│   │   ├── line_counter.py   # Đếm qua line
+│   │   └── zone_counter.py   # Đếm trong zone/lane
+│   ├── visualize/
+│   │   └── draw.py           # Vẽ bounding boxes
+│   └── pipeline.py           # Pipeline chính
+├── inputs/                   # Input videos/images
+├── outputs/                  # Output results
+├── models/                   # YOLO models
+├── run.py                    # Script chạy chính
+└── requirements.txt
 ```
 
-### 2. Tạo virtual environment (khuyến nghị)
-
-```bash
-python -m venv venv
-
-# macOS/Linux
-source venv/bin/activate
-
-# Windows
-venv\Scripts\activate
-```
-
-### 3. Cài đặt dependencies
+## Cài đặt
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Download YOLOv8 weights (tự động hoặc thủ công)
+## Cấu hình
 
-Model sẽ tự động download khi chạy lần đầu, hoặc download thủ công:
+### 1. Sử dụng YAML (khuyến nghị cho settings cơ bản)
+
+Chỉnh sửa `config/settings.yaml`:
+
+```yaml
+detector:
+  type: yolo26n
+  conf_threshold: 0.5
+  iou_threshold: 0.7
+  classes: [2]  # chỉ detect xe
+```
+
+### 2. Sử dụng Environment Variables (khuyến nghị cho môi trường khác nhau)
+
+Copy file `.env.sample` thành `.env` và chỉnh sửa:
 
 ```bash
-# Weights đã có sẵn tại weights/yolov8n.pt
-# Nếu chưa có, sẽ tự động download
+cp .env.sample .env
 ```
 
-## 📖 Sử dụng
-
-### Xử lý Video
+File `.env` sẽ override các settings trong YAML:
 
 ```bash
-# Cơ bản
-python run.py --source inputs/videos/traffic.mp4
-
-# Lưu output
-python run.py --source inputs/videos/traffic.mp4 --output outputs/videos/result.mp4
-
-# Không hiển thị realtime (chỉ xử lý)
-python run.py --source video.mp4 --no-display
-
-# Tùy chỉnh confidence threshold
-python run.py --source video.mp4 --conf 0.5
+# .env
+DETECTOR_CONF_THRESHOLD=0.6
+DETECTOR_CLASSES=0,2  # person và car
+SAVER_SAVE_IMAGES=true
 ```
 
-### Xử lý Image
+Environment variables có độ ưu tiên cao hơn YAML settings.
+
+**Xem chi tiết**: [ENV_VARIABLES.md](ENV_VARIABLES.md)
+
+## Sử dụng
+
+### Chạy với video mặc định
 
 ```bash
-python run.py --source inputs/images/test.jpg --output outputs/images/result.jpg
+python run.py
 ```
 
-### Webcam (Real-time)
+### Chạy với video tùy chỉnh
 
 ```bash
-python run.py --source 0
+python run.py --input inputs/videos/your_video.mp4
 ```
 
-### Với custom config
+### Chọn loại counter
 
 ```bash
-python run.py --source video.mp4 --config configs/custom.yaml
+# Line counter
+python run.py --counter line
+
+# Zone counter
+python run.py --counter zone
+
+# Lane counter (polygon)
+python run.py --counter lane
 ```
 
-## ⚙️ Cấu hình
+### Lọc theo class
 
-Chỉnh sửa [configs/settings.yaml](configs/settings.yaml) để tùy chỉnh:
-
-### Model Configuration
-```yaml
-model:
-  weights_path: "weights/yolov8n.pt"
-  confidence_threshold: 0.3
-  iou_threshold: 0.5
-  device: "cpu"  # Đổi thành "cuda" nếu có GPU
-  classes: [0, 2]  # 0: person, 2: car
-```
-
-### Tracking Configuration
-```yaml
-tracking:
-  tracker_type: "bytetrack"
-  track_activation_threshold: 0.25
-  lost_track_buffer: 30
-```
-
-### Line Counting
-```yaml
-counting:
-  line_counting:
-    enabled: true
-    lines:
-      - name: "line_1"
-        start: [100, 300]  # (x, y)
-        end: [500, 300]
-        count_in: true
-        count_out: true
-```
-
-### Zone Counting
-```yaml
-counting:
-  zone_counting:
-    enabled: true
-    zones:
-      - name: "zone_1"
-        polygon: [[200, 100], [600, 100], [600, 400], [200, 400]]
-        count_in: true
-        count_out: true
-```
-
-### Performance Optimization
-```yaml
-performance:
-  resize_frame: true
-  target_width: 1280
-  target_height: 720
-  skip_frames: 0  # Skip mỗi N frames để tăng FPS
-```
-
-## 📁 Cấu trúc Project
-
-```
-object-detection-courses/
-├── configs/
-│   ├── logging.yaml          # Cấu hình logging
-│   └── settings.yaml         # Cấu hình chính
-├── core/
-│   ├── logging_setup.py      # Setup logging
-│   └── settings_loader.py    # Load config
-├── src/
-│   ├── detection/
-│   │   └── detector.py       # YOLO detector
-│   ├── tracking/
-│   │   └── tracker.py        # ByteTrack tracker
-│   ├── counting/
-│   │   ├── direction.py      # Direction enum
-│   │   ├── line_counter.py   # Line counting
-│   │   └── zone_counter.py   # Zone counting
-│   ├── visualization/
-│   │   └── draw.py           # Visualization
-│   └── pipeline.py           # Main pipeline
-├── inputs/
-│   ├── images/               # Input images
-│   └── videos/               # Input videos
-├── outputs/
-│   ├── images/               # Output images
-│   ├── videos/               # Output videos
-│   └── logs/                 # Logs & reports
-├── weights/
-│   └── yolov8n.pt           # YOLOv8 weights
-├── run.py                    # Entry point
-├── requirements.txt          # Dependencies
-└── README.md                 # This file
-```
-
-## 📊 Output
-
-### Video/Image Output
-- Saved to `outputs/videos/` hoặc `outputs/images/`
-- Annotated với bounding boxes, tracking IDs, counts
-
-### JSON Reports
-- Saved to `outputs/logs/report_*.json`
-- Chứa:
-  - Total frames processed
-  - Detection statistics
-  - Counting results (line & zone)
-  - Processing performance
-
-### Logs
-- `outputs/logs/app.log` - General logs
-- `outputs/logs/error.log` - Error logs
-
-## 🎯 COCO Classes
-
-Classes được detect (có thể customize trong config):
-- **0**: person
-- **2**: car
-
-Full COCO classes: https://github.com/ultralytics/ultralytics/blob/main/ultralytics/cfg/datasets/coco.yaml
-
-## 🔧 Troubleshooting
-
-### Lỗi "Model weights not found"
 ```bash
-# Download weights thủ công
-# Weights sẽ tự động download khi chạy lần đầu
+# Chỉ detect xe (class 2)
+python run.py --classes 2
+
+# Detect người và xe (class 0 và 2)
+python run.py --classes 0 2
 ```
 
-### FPS thấp trên CPU
-```yaml
-# Trong settings.yaml
-performance:
-  resize_frame: true
-  target_width: 1280
-  target_height: 720
-  skip_frames: 1  # Skip mỗi frame thứ 2
+### Tùy chọn frame stride
+
+```bash
+# Xử lý mỗi 2 frame (tăng tốc độ)
+python run.py --stride 2
 ```
 
-### Out of Memory
-```yaml
-performance:
-  resize_frame: true
-  target_width: 640
-  target_height: 480
+### Không hiển thị cửa sổ
+
+```bash
+python run.py --no-display
 ```
 
-## 🎨 Customization
+### Ví dụ đầy đủ
 
-### Thay đổi classes detect
-
-```yaml
-model:
-  classes: [0, 1, 2, 3, 5, 7]  # person, bicycle, car, motorcycle, bus, truck
+```bash
+python run.py \
+    --input inputs/videos/traffic.mp4 \
+    --counter lane \
+    --classes 2 7 \
+    --stride 1
 ```
 
-### Thêm line counter mới
+## Cấu hình
 
-```yaml
-counting:
-  line_counting:
-    lines:
-      - name: "entrance"
-        start: [100, 200]
-        end: [400, 200]
-      - name: "exit"
-        start: [100, 500]
-        end: [400, 500]
+Chỉnh sửa `config/settings.yaml` để thay đổi:
+
+- **Detector**: confidence threshold, IOU threshold, classes
+- **Saver**: lưu frames, text files, crops
+- **Tracker**: loại tracker (bytetrack/strongsort)
+
+## Các tính năng chính
+
+### 1. YOLODetector
+- Detect và track objects với YOLO
+- Hỗ trợ ByteTrack và SORT tracker
+- Gán track_id cho mỗi object
+
+### 2. Counter
+- **LineCounter**: Đếm objects qua một đường thẳng
+- **ZoneCounter**: Đếm objects trong một vùng hình chữ nhật
+- **LaneZoneCounter**: Đếm objects trong một vùng polygon (lane)
+
+### 3. Saver
+- Lưu frames
+- Lưu detection text files
+- Lưu crop từng object
+
+### 4. Visualizer
+- Vẽ bounding boxes
+- Hiển thị track_id và confidence
+- Vẽ counter regions
+
+## YOLO Classes
+
+Một số class IDs phổ biến:
+- 0: person
+- 2: car
+- 3: motorcycle
+- 5: bus
+- 7: truck
+
+## Lưu ý
+
+- Model mặc định: `yolo26n.pt` (cần đặt trong thư mục `models/`)
+- Video input: đặt trong thư mục `inputs/videos/`
+- Kết quả: lưu trong thư mục `outputs/`
+- Nhấn ESC để thoát khi đang chạy
+
+## Tùy chỉnh Counter
+
+Để thay đổi vị trí counter, chỉnh sửa trong `run.py`:
+
+```python
+# Line counter
+counter_kwargs = {
+    "start": (100, 200),
+    "end": (500, 200)
+}
+
+# Zone counter
+counter_kwargs = {
+    "top_left": (100, 100),
+    "bottom_right": (500, 300)
+}
+
+# Lane counter
+counter_kwargs = {
+    "points": [(x1, y1), (x2, y2), (x3, y3), (x4, y4)]
+}
 ```
-
-### Thay đổi màu visualization
-
-```yaml
-visualization:
-  colors:
-    person: [0, 255, 0]    # Green (BGR)
-    car: [255, 0, 0]       # Blue
-    line: [0, 255, 255]    # Yellow
-    zone: [255, 0, 255]    # Magenta
-```
-
-## 📈 Performance Tips
-
-1. **CPU Optimization**:
-   - Resize frames nhỏ hơn
-   - Skip frames
-   - Use YOLOv8n (smallest model)
-
-2. **GPU Acceleration**:
-   ```yaml
-   model:
-     device: "cuda"
-     use_half_precision: true  # FP16
-   ```
-
-3. **Batch Processing**:
-   - Disable real-time display: `--no-display`
-   - Process offline
-
-## 🤝 Support
-
-Nếu gặp vấn đề:
-1. Check logs tại `outputs/logs/`
-2. Verify config trong `configs/settings.yaml`
-3. Ensure dependencies installed: `pip install -r requirements.txt`
-
-## 📝 License
-
-MIT License
-
-## 🙏 Credits
-
-- **YOLOv8**: Ultralytics
-- **ByteTrack**: ByteTrack paper
-- **Supervision**: Roboflow Supervision library
-
----
-
-**Enjoy tracking! 🚀**

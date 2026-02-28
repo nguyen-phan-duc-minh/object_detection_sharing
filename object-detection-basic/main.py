@@ -28,10 +28,10 @@ def main():
     if not ret:
         return
     
-    counter = LineCounter((100, 200), (500, 200))
+    # counter = LineCounter((100, 200), (500, 200))
     # counter = ZoneCounter((100, 100), (500, 300))
-    # points = [(180, 100), (400, 100), (550, 300), (50, 300)]
-    # counter = LaneZoneCounter(points, frame.shape)
+    points = [(180, 100), (400, 100), (550, 300), (50, 300)]
+    counter = LaneZoneCounter(points, frame.shape)
     frame_id = 0
     detections = []
 
