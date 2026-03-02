@@ -1,12 +1,12 @@
-import cv2
+import cv2 
 from pathlib import Path
 import logging
 
 from src.detector.detector import YOLODetector
+from src.saver import ResultSaver
+from src.visualize.visualize import draw_boxes
 from src.counter.line_counter import LineCounter
 from src.counter.zone_counter import ZoneCounter, LaneZoneCounter
-from src.visualize.draw import draw_boxes
-from src.saver.saver import ResultSaver
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +14,6 @@ class DetectionPipeline:
     def __init__(self, config):
         self.config = config
         
-        # Initialize detector. Vi du: models/yolo26n.pt
         model_path = Path(config['data']['model']) / f"{config['detector']['type']}.pt"
         self.detector = YOLODetector(
             weight_path=str(model_path),
@@ -25,7 +24,6 @@ class DetectionPipeline:
             device=config['detector'].get('device', None),
         )
         
-        # Initialize saver
         self.saver = ResultSaver(
             save_dir=config['data']['output'],
             save_frame=config['saver'].get('save_images', True),
@@ -33,11 +31,10 @@ class DetectionPipeline:
             save_crop=config['saver'].get('save_crops', False),
         )
         
-        # Counter will be initialized in run()
         self.counter = None
         
         logger.info("Detection pipeline initialized")
-    
+        
     def initialize_counter(self, counter_type, **kwargs):
         if counter_type == 'line':
             start = kwargs.get('start', (100, 200))
@@ -61,15 +58,14 @@ class DetectionPipeline:
             
         else:
             raise ValueError(f"Unknown counter type: {counter_type}")
-    
+        
     def run_video(self, video_path, counter_type='lane', counter_kwargs=None, vid_stride=1, display=True):
         cap = cv2.VideoCapture(str(video_path))
         ret, frame = cap.read()
         if not ret:
-            logger.error("Failed to read video")
+            logger.error(f"Failed to read video: {video_path}")
             return
         
-        # Initialize counter with first frame
         if counter_kwargs is None:
             counter_kwargs = {}
         counter_kwargs['frame_shape'] = frame.shape
@@ -77,43 +73,38 @@ class DetectionPipeline:
         
         frame_id = 0
         detections = []
-        
+
         while True:
             frame_id += 1
             
-            # Run detection on specified frames
             if frame_id == 1 or frame_id % vid_stride == 0:
                 detections = self.detector.detect(frame)
                 
-                # Save results if configured
-                if self.config['saver'].get('save_images', False):
+                if self.config['saver'].get('save_images', False) or self.config['saver'].get('save_detections', False) or self.config['saver'].get('save_crops', False):
                     self.saver.save(frame, detections, frame_id)
-            
-            # Update counter
+
             if self.counter:
                 self.counter.update(detections)
-            
-            # Visualize
+                
             frame = draw_boxes(frame, detections, self.detector.model.names)
+            
             if self.counter:
                 frame = self.counter.draw(frame)
             
-            # Display
             if display:
                 cv2.imshow("Detection", frame)
-                if cv2.waitKey(1) == 27:  # ESC key
-                    logger.info("User interrupted")
+                if cv2.waitKey(1) == 27:
+                    logger.info("Video processing interrupted by user")
                     break
             
-            # Read next frame
             ret, frame = cap.read()
             if not ret:
                 break
-        
+
         cap.release()
         if display:
             cv2.destroyAllWindows()
-        
-        logger.info(f"Video processing completed: {frame_id} frames processed")
+            
+        logger.info("Video processing completed")
         if self.counter:
             logger.info(f"Final count: {self.counter.count}")

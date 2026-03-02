@@ -1,19 +1,18 @@
-import os
 import yaml
 from pathlib import Path
 from dotenv import load_dotenv
+import os
 
 def load_settings():
     env_path = Path(".env")
     if env_path.exists():
         load_dotenv(dotenv_path=env_path)
-    
+        
     config_path = Path("config/settings.yaml")
     with open(config_path) as file:
         settings = yaml.safe_load(file)
-    
-    # Override with environment variables
-    # App settings
+        
+   # App settings
     if os.getenv("APP_ENV"):
         settings["app"]["env"] = os.getenv("APP_ENV")
     if os.getenv("APP_NAME"):

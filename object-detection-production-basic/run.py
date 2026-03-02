@@ -4,7 +4,6 @@ from core.settings_loader import load_settings
 from core.logging_setup import setup_logging
 from src.pipeline import DetectionPipeline
 
-
 def main():
     config = load_settings()
     setup_logging()
@@ -38,9 +37,10 @@ def main():
             vid_stride=VID_STRIDE,
             display=DISPLAY
         )
+        
     else:
         print(f"Error: Unsupported file format: {input_path.suffix}")
         print("Supported formats: .mp4, .avi, .mov, .mkv, .jpg, .jpeg, .png, .bmp")
-
+        
 if __name__ == "__main__":
     main()
