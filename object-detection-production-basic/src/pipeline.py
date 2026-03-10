@@ -7,6 +7,7 @@ from src.saver import ResultSaver
 from src.visualize.visualize import draw_boxes
 from src.counter.line_counter import LineCounter
 from src.counter.zone_counter import ZoneCounter, LaneZoneCounter
+from src.counter.speed import SpeedEstimator
 
 logger = logging.getLogger(__name__)
 
@@ -33,28 +34,42 @@ class DetectionPipeline:
         
         self.counter = None
         
+        # Initialize speed estimator if enabled
+        self.speed_estimator = None
+        if config.get('speed', {}).get('enabled', False):
+            self.speed_estimator = SpeedEstimator(
+                fps=config['speed'].get('fps', 30),
+                pixel_per_meter=config['speed'].get('pixel_per_meter', 21.7),
+                smooth_window=config['speed'].get('smooth_window', 5),
+            )
+            logger.info("SpeedEstimator initialized")
+        
         logger.info("Detection pipeline initialized")
         
     def initialize_counter(self, counter_type, **kwargs):
         if counter_type == 'line':
             start = kwargs.get('start', (100, 200))
             end = kwargs.get('end', (500, 200))
-            self.counter = LineCounter(start, end)
+            color = kwargs.get('color', None)
+            self.counter = LineCounter(start, end, color=color)
             logger.info(f"LineCounter initialized: {start} to {end}")
             
         elif counter_type == 'zone':
             top_left = kwargs.get('top_left', (100, 100))
             bottom_right = kwargs.get('bottom_right', (500, 300))
-            self.counter = ZoneCounter(top_left, bottom_right)
+            color = kwargs.get('color', None)
+            self.counter = ZoneCounter(top_left, bottom_right, color=color)
             logger.info(f"ZoneCounter initialized: {top_left} to {bottom_right}")
             
         elif counter_type == 'lane':
             points = kwargs.get('points', [(180, 100), (400, 100), (550, 300), (50, 300)])
             frame_shape = kwargs.get('frame_shape')
+            colors = kwargs.get('colors', None)
             if frame_shape is None:
                 raise ValueError("frame_shape is required for LaneZoneCounter")
-            self.counter = LaneZoneCounter(points, frame_shape)
-            logger.info(f"LaneZoneCounter initialized with {len(points)} points")
+            self.counter = LaneZoneCounter(points, frame_shape, colors=colors)
+            num_zones = len(points) if isinstance(points[0][0], (list, tuple)) else 1
+            logger.info(f"LaneZoneCounter initialized with {num_zones} zone(s)")
             
         else:
             raise ValueError(f"Unknown counter type: {counter_type}")
@@ -79,6 +94,9 @@ class DetectionPipeline:
             
             if frame_id == 1 or frame_id % vid_stride == 0:
                 detections = self.detector.detect(frame)
+                
+                if self.speed_estimator:
+                    detections = self.speed_estimator.update(detections)
                 
                 if self.config['saver'].get('save_images', False) or self.config['saver'].get('save_detections', False) or self.config['saver'].get('save_crops', False):
                     self.saver.save(frame, detections, frame_id)

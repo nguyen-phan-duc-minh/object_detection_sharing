@@ -1,9 +1,10 @@
 import cv2
 
 class LineCounter:
-    def __init__(self, start, end):
+    def __init__(self, start, end, color=None):
         self.start = start # (x, y) start[1] la lay y ra
         self.end = end
+        self.color = tuple(color) if color else (0, 255, 0)  # Màu mặc định: Green
         self.count = 0
         self.counted_ids = set() # lưu track_id của các object đã đếm để tránh đếm trùng
 
@@ -29,14 +30,14 @@ class LineCounter:
         for cx, cy in self.centers:
             cv2.circle(frame, (cx, cy), 4, (0, 255, 255), -1)
             
-        cv2.line(frame, self.start, self.end, (0, 255, 0), 2)
+        cv2.line(frame, self.start, self.end, self.color, 2)
         cv2.putText(
             frame,
             f"Count: {self.count}",
             (20, 40),
             cv2.FONT_HERSHEY_SIMPLEX,
             1,
-            (0, 255, 0),
+            self.color,
             2,
         )
         return frame

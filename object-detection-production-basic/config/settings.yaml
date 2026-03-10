@@ -7,18 +7,68 @@ data:
   source: inputs/videos
   output: outputs
   model: models
+
+input:
+  path: inputs/videos/traffic-drone-top-view.mp4
+  vid_stride: 1 
+  display: true
   
 detector:
   type: yolo26n
   conf_threshold: 0.5
   iou_threshold: 0.7
-  classes: null  # null for all classes, or list like [0, 2] for specific classes
+  classes: null  
   max_det: 100
-  device: null  # null for auto, or 'cpu', 'cuda', 'mps'
+  device: null  
+
+counters:
+  # - type: line
+  #   start: [100, 200]
+  #   end: [500, 200]
+  #   color: [255, 0, 0]  # BGR: Blue
   
-counter:
-  count_line_position: 0.5
-  direction: both
+  # - type: zone
+  #   top_left: [100, 100]
+  #   bottom_right: [500, 300]
+  #   color: [0, 255, 0]  # BGR: Green
+  
+  # # Lane với một vùng duy nhất (4 điểm)
+  # - type: lane
+  #   points: [[180, 100], [400, 100], [550, 300], [50, 300]]
+  #   color: [0, 0, 255]  # BGR: Red
+  
+  # LaneZone với NHIỀU VÙNG (3 làn đường riêng biệt)
+  - type: lanezone
+    points: [
+      # Zone 1 - Làn trên
+      [[770, 280], [870, 280], [870, 0], [770, 0]],
+      [[870, 280], [970, 280], [970, 0], [870, 0]],
+      [[1020, 280], [1120, 280], [1120, 0], [1020, 0]],
+      [[1120, 280], [1220, 280], [1220, 0], [1120, 0]],
+
+      # Zone 2 - Làn dưới
+      [[770, 1080], [870, 1080], [870, 830], [770, 830]],
+      [[870, 1080], [970, 1080], [970, 830], [870, 830]],
+      [[1020, 1080], [1120, 1080], [1120, 830], [1020, 830]],
+      [[1120, 1080], [1220, 1080], [1220, 830], [1120, 830]],
+
+      # Zone 3 - Làn trái
+      [[0, 420], [620, 420], [620, 570], [0, 570]],
+      [[0, 570], [620, 570], [620, 680], [0, 680]],
+
+      # Zone 3 - Làn trái
+      [[1340, 480], [1980, 480], [1980, 570], [1340, 570]],
+    ]
+    colors: [  # Màu riêng cho từng zone (8 zones = 8 màu)
+      [255, 0, 0],      # Zone 1: Blue
+      [0, 255, 0],      # Zone 2: Green  
+      [0, 0, 255],      # Zone 3: Red
+      [255, 255, 0],    # Zone 4: Cyan
+      [255, 0, 255],    # Zone 5: Magenta
+      [0, 255, 255],    # Zone 6: Yellow
+      [128, 0, 128],    # Zone 7: Purple
+      [255, 128, 0]     # Zone 8: Orange
+    ]
 
 saver:
   save_images: false
@@ -36,3 +86,26 @@ visualizer:
   show_detections: true
   show_tracks: true
   show_count: true
+
+# Speed estimation configuration
+speed:
+  enabled: true  # Bật/tắt tính toán vận tốc
+  fps: 30  # Frame per second của video (30 cho video thông thường)
+  
+  # pixel_per_meter: Số pixel tương ứng 1 mét trong video
+  # Cách calibrate:
+  #   1. Đo một đoạn đường thực tế (ví dụ: 10 meters)
+  #   2. Đếm số pixels tương ứng trong video (ví dụ: 217 pixels)
+  #   3. pixel_per_meter = 217 / 10 = 21.7
+  # 
+  # Với video drone từ trên cao:
+  #   - Chiều cao drone: 50m
+  #   - Video resolution: 1920x1080
+  #   - FOV (field of view): ~100m
+  #   - => ~100m / 1920px = ~0.052 m/pixel => ~19.2 pixel/meter
+  pixel_per_meter: 21.7
+  
+  # smooth_window: Số frame để smooth speed (giảm nhiễu)
+  # Giá trị nhỏ (3-5): Responsive nhưng nhiễu
+  # Giá trị lớn (10-15): Mượt nhưng chậm phản ứng
+  smooth_window: 5

@@ -12,31 +12,70 @@ def main():
     Path("outputs").mkdir(exist_ok=True)
     Path("models").mkdir(exist_ok=True)
     
-    INPUT_PATH = "inputs/videos/videoplayback.mp4"
-    COUNTER_TYPE = "lane"  
-    VID_STRIDE = 1  
-    DISPLAY = True 
+    input_path = Path(config["input"]["path"])
+    vid_stride = config["input"]["vid_stride"]
+    display = config["input"]["display"]
     
     pipeline = DetectionPipeline(config)
-    input_path = Path(INPUT_PATH)
-    counter_kwargs = {}
+    counters = config.get("counters", [])
     
-    if COUNTER_TYPE == "line":
-        counter_kwargs = {"start": (100, 200), "end": (500, 200)}
-    elif COUNTER_TYPE == "zone":
-        counter_kwargs = {"top_left": (100, 100), "bottom_right": (500, 300)}
-    elif COUNTER_TYPE == "lane":
-        counter_kwargs = {"points": [(180, 100), (400, 100), (550, 300), (50, 300)]}
+    if not counters:
+        print("Warning: No counters configured in settings.yaml")
+        return
     
-    # Run pipeline
-    if input_path.suffix.lower() in ['.mp4', '.avi', '.mov', '.mkv']:
-        pipeline.run_video(
-            video_path=input_path,
-            counter_type=COUNTER_TYPE,
-            counter_kwargs=counter_kwargs,
-            vid_stride=VID_STRIDE,
-            display=DISPLAY
-        )
+    # Run pipeline for each counter
+    for counter_config in counters:
+        counter_type = counter_config["type"]
+        counter_kwargs = {}
+        
+        if counter_type == "line":
+            counter_kwargs = {
+                "start": tuple(counter_config["start"]),
+                "end": tuple(counter_config["end"])
+            }
+            if "color" in counter_config:
+                counter_kwargs["color"] = counter_config["color"]
+                
+        elif counter_type == "zone":
+            counter_kwargs = {
+                "top_left": tuple(counter_config["top_left"]),
+                "bottom_right": tuple(counter_config["bottom_right"])
+            }
+            if "color" in counter_config:
+                counter_kwargs["color"] = counter_config["color"]
+        elif counter_type in ["lane", "lanezone"]:
+            points_data = counter_config["points"]
+            
+            # Kiểm tra xem có phải nhiều zones không (list 3 chiều)
+            if len(points_data) > 0 and isinstance(points_data[0][0], (list, tuple)):
+                # Nhiều zones: [[[x,y], [x,y]], [[x,y], [x,y]], ...]
+                counter_kwargs = {
+                    "points": [[tuple(point) for point in zone] for zone in points_data]
+                }
+            else:
+                # Một zone duy nhất: [[x,y], [x,y], ...]
+                counter_kwargs = {
+                    "points": [tuple(point) for point in points_data]
+                }
+            
+            if "colors" in counter_config:
+                counter_kwargs["colors"] = counter_config["colors"]
+            elif "color" in counter_config:
+                counter_kwargs["colors"] = counter_config["color"]
+            
+            counter_type = "lane"
+        
+        print(f"Running pipeline with {counter_type} counter...")
+        
+        # Run pipeline
+        if input_path.suffix.lower() in ['.mp4', '.avi', '.mov', '.mkv']:
+            pipeline.run_video(
+                video_path=input_path,
+                counter_type=counter_type,
+                counter_kwargs=counter_kwargs,
+                vid_stride=vid_stride,
+                display=display
+            )
         
     else:
         print(f"Error: Unsupported file format: {input_path.suffix}")

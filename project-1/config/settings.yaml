@@ -1,0 +1,68 @@
+app:
+  name: Object Detection and Tracking
+  version: 1.0.0
+  env: production
+
+data:
+  source: inputs/videos
+  output: outputs
+  model: models
+
+input:
+  path: inputs/videos/videoplayback.mp4
+  vid_stride: 1 
+  display: true  
+
+detector:
+  type: yolo26n
+  conf_threshold: 0.5
+  iou_threshold: 0.7
+  classes: null  # null for all classes, or list like [0, 2] for specific classes
+  max_det: 100
+  device: null  # null for auto, or 'cpu', 'cuda', 'mps'
+
+saver:
+  save_images: false
+  save_videos: false
+  save_detections: false
+  save_crops: false
+
+counters:
+  # - type: line
+  #   start: [100, 200]
+  #   end: [500, 200]
+  #   color: [255, 0, 0]  # BGR: Blue
+
+  # - type: zone
+  #   top_left: [100, 100]
+  #   bottom_right: [500, 300]
+  #   color: [0, 255, 0]  # BGR: Green
+
+  - type: lane
+    points: [
+        # Zone 1 - Làn trái
+        [[220, 50], [255, 50], [190, 300], [60, 300]],
+        # Zone 2 - Làn giữa  
+        [[255, 50], [295, 50], [315, 300], [190, 300]],
+        # Zone 3 - Làn giữa
+        [[295, 50], [325, 50], [445, 300], [315, 300]],
+        # Zone 4 - Làn phải
+        [[325, 50], [360, 50], [570, 300], [445, 300]]
+    ]
+    colors: [  # Màu riêng cho từng zone
+        [255, 0, 0],    # Zone 1: Blue
+        [0, 255, 0],    # Zone 2: Green
+        [0, 0, 255],    # Zone 3: Red
+        [255, 255, 0]     # Zone 4: Cyan
+    ]
+
+tracker:
+  type: bytetrack  # bytetrack or strongsort
+  max_age: 30
+  n_init: 3
+  iou_threshold: 0.3
+
+visualizer:
+  show_detections: true
+  show_tracks: true
+  show_count: true

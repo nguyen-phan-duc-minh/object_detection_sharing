@@ -6,16 +6,16 @@ from counter import LaneZoneCounter
 from visualize import draw_boxes
 from saver import ResultSaver
 
-VIDEO_PATH = "inputs/videos/videoplayback.mp4"
-VID_STRIDE = 1
+VIDEO_PATH = "inputs/videos/traffic-drone-top-view.mp4"
+VID_STRIDE = 2  # Xử lý mỗi 2 frame để tăng tốc
 
 def main():
     detector = YOLODetector(
-        "models/yolo26n.pt",
-        # conf=0.4,
-        # iou=0.6,
-        classes=[2],  # chỉ detect person
-        # max_det=50,
+        "models/best.pt",
+        conf=0.5,  # Mặc định đã tốt, có thể uncomment để tùy chỉnh
+        iou=0.5,
+        classes=[2, 3, 5, 7],  # car, motorcycle, bus, truck (không detect person)
+        max_det=100,
     )
     saver = ResultSaver(
         save_dir="outputs",
@@ -28,10 +28,11 @@ def main():
     if not ret:
         return
     
-    # counter = LineCounter((100, 200), (500, 200))
-    # counter = ZoneCounter((100, 100), (500, 300))
-    points = [(180, 100), (400, 100), (550, 300), (50, 300)]
-    counter = LaneZoneCounter(points, frame.shape)
+    # Counter với tọa độ phù hợp 1920x1080
+    counter = LineCounter((300, 600), (1600, 600))  # Line ngang giữa frame
+    # counter = ZoneCounter((300, 200), (1600, 900))  # Zone hình chữ nhật lớn
+    # points = [(500, 200), (1400, 200), (1800, 900), (100, 900)]  # Lane Zone toàn bộ đường
+    # counter = LaneZoneCounter(points, frame.shape)
     frame_id = 0
     detections = []
 

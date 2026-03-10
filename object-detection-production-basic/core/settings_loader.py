@@ -48,6 +48,14 @@ def load_settings():
         else:
             settings["detector"]["classes"] = None
     
+    # Input settings
+    if os.getenv("INPUT_PATH"):
+        settings["input"]["path"] = os.getenv("INPUT_PATH")
+    if os.getenv("INPUT_VID_STRIDE"):
+        settings["input"]["vid_stride"] = int(os.getenv("INPUT_VID_STRIDE"))
+    if os.getenv("INPUT_DISPLAY"):
+        settings["input"]["display"] = os.getenv("INPUT_DISPLAY").lower() == "true"
+    
     # Saver settings
     if os.getenv("SAVER_SAVE_IMAGES"):
         settings["saver"]["save_images"] = os.getenv("SAVER_SAVE_IMAGES").lower() == "true"
