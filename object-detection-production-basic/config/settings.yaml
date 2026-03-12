@@ -87,7 +87,6 @@ visualizer:
   show_tracks: true
   show_count: true
 
-# Speed estimation configuration
 speed:
   enabled: true  # Bật/tắt tính toán vận tốc
   fps: 30  # Frame per second của video (30 cho video thông thường)

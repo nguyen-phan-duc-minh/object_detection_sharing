@@ -8,6 +8,8 @@ def draw_boxes(frame, detections, class_names):
 
         label = class_names[cls_id]
         text = f"{label} - {detection['track_id']} - {conf:.2f}" # car - 0.85
+        if 'speed' in detection and detection['speed'] is not None:
+            text += f" - {detection['speed']:.2f} km/h" # car - 0.85 - 60.00 km/h
 
         # Vẽ box
         cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 0), 2) # frame, vi tri bat dau, vi tri ket thuc, mau sac, do day

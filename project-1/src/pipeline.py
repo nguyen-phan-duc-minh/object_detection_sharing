@@ -7,6 +7,7 @@ from src.counter.line_counter import LineCounter
 from src.counter.zone_counter import ZoneCounter, LaneZoneCounter
 from src.visualize.draw import draw_boxes
 from src.saver.saver import ResultSaver
+from src.counter.speed import SpeedEstimator
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +37,15 @@ class DetectionPipeline:
         # Counter will be initialized in run()
         self.counter = None
         
+        self.speed_estimator = None
+        if config.get('speed', {}).get('enabled', False):
+            self.speed_estimator = SpeedEstimator(
+                fps=config['speed'].get('fps', 30),
+                pixel_per_meter=config['speed'].get('pixel_per_meter', 21.7),
+                smooth_window=config['speed'].get('smooth_window', 5),
+            )
+            logger.info("SpeedEstimator initialized")
+
         logger.info("Detection pipeline initialized")
     
     def initialize_counter(self, counter_type, **kwargs):
@@ -88,6 +98,9 @@ class DetectionPipeline:
             # Run detection on specified frames
             if frame_id == 1 or frame_id % vid_stride == 0:
                 detections = self.detector.detect(frame)
+                
+                if self.speed_estimator:
+                    detections = self.speed_estimator.update(detections)
                 
                 # Save results if configured
                 if self.config['saver'].get('save_images', False):

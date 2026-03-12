@@ -126,7 +126,7 @@ class LaneZoneCounter:
             cv2.circle(frame, (cx, cy), 4, (0, 255, 255), -1)
 
         for zone_idx, zone_points in enumerate(self.zones):
-            colors = self.colors[zone_idx]
+            colors = self.colors[zone_idx % len(self.colors)] # lấy màu tương ứng cho zone hiện tại
             # tô vùng lane mờ
             cv2.fillPoly(overlay, [zone_points], colors) # tô polygon vào overlay, colors là màu của zone
             
