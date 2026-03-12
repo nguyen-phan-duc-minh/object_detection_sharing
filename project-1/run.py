@@ -49,6 +49,9 @@ def main():
             }
             if "color" in counter_config:
                 counter_kwargs["color"] = counter_config["color"]
+                
+            if "max_speeds" in counter_config:
+                counter_kwargs["max_speeds"] = counter_config["max_speeds"]
 
     # Run pipeline
     if input_path.suffix.lower() in ['.mp4', '.avi', '.mov', '.mkv']:

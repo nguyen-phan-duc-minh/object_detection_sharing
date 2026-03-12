@@ -67,11 +67,14 @@ class DetectionPipeline:
             points = kwargs.get('points', [(180, 100), (400, 100), (550, 300), (50, 300)])
             frame_shape = kwargs.get('frame_shape')
             color = kwargs.get('color', None)
+            max_speeds = kwargs.get('max_speeds', None)
             if frame_shape is None:
                 raise ValueError("frame_shape is required for LaneZoneCounter")
-            self.counter = LaneZoneCounter(points, frame_shape, colors=color)
+            self.counter = LaneZoneCounter(points, frame_shape, colors=color, max_speeds=max_speeds)
             num_zones = len(points) if isinstance(points[0][0], (list, tuple)) else 1
             logger.info(f"LaneZoneCounter initialized with {num_zones} zone(s)")
+            if max_speeds:
+                logger.info(f"Speed limits configured for zones: {max_speeds}")
             
         else:
             raise ValueError(f"Unknown counter type: {counter_type}")

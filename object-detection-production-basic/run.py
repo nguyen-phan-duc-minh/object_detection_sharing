@@ -63,6 +63,10 @@ def main():
             elif "color" in counter_config:
                 counter_kwargs["colors"] = counter_config["color"]
             
+            # Thêm max_speeds nếu có trong config
+            if "max_speeds" in counter_config:
+                counter_kwargs["max_speeds"] = counter_config["max_speeds"]
+            
             counter_type = "lane"
         
         print(f"Running pipeline with {counter_type} counter...")

@@ -58,7 +58,7 @@ class ZoneCounter:
         return frame
     
 class LaneZoneCounter:
-    def __init__(self, points, frame_shape, colors=None):
+    def __init__(self, points, frame_shape, colors=None, max_speeds=None):
         if len(points) > 0 and isinstance(points[0][0], (list, tuple)):
             self.zones = [np.array(zone, dtype=np.int32) for zone in points]
             self.is_multi_zone = True
@@ -74,10 +74,18 @@ class LaneZoneCounter:
         else:
             self.colors = [tuple(colors)] * len(self.zones)
         
+        if max_speeds is None:
+            self.max_speeds = [None] * len(self.zones)
+        else:
+            self.max_speeds = max_speeds
+            if len(max_speeds) < len(self.zones):
+                self.max_speeds += [None] * (len(self.zones) - len(max_speeds))
+        
         self.count = 0
         self.inside_ids = set()  # tránh đếm trùng
         self.zone_counts = [0] * len(self.zones) # dem so luong object trong moi zone (neu co nhieu zone)
         self.zone_inside_ids = [set() for _ in range(len(self.zones))] # luu track_id cua cac object da dem trong moi zone (neu co nhieu zone)
+        self.speeding_ids = set() # luu track_id cua cac object vi pham toc do (neu co max_speeds)
 
         # tạo mask theo kích thước frame
         h, w = frame_shape[:2] # [:2] la de lay height va width thoi, khong can den so kenh
@@ -92,6 +100,7 @@ class LaneZoneCounter:
     def update(self, detections):
         current_inside = set()
         current_zone_inside = [set() for _ in range(len(self.zones))] # luu track_id cua cac object hien dang o trong moi zone (neu co nhieu zone)
+        current_speeding = set() # luu track_id cua cac object hien dang vi pham toc do (neu co max_speeds)
         self.centers = []
 
         for detection in detections:
@@ -99,6 +108,7 @@ class LaneZoneCounter:
             track_id = detection["track_id"]
             cx = int((x1 + x2) / 2)
             cy = int((y1 + y2) / 2)
+            speed = detection.get('speed', 0) # lay speed tu detection (da duoc them boi SpeedEstimator)
 
             self.centers.append((cx, cy))
                 
@@ -111,13 +121,20 @@ class LaneZoneCounter:
                 if mask[cy, cx] == 255:
                     current_zone_inside[zone_idx].add(track_id) # them track_id vao zone hien tai
                     current_inside.add(track_id) # them track_id vao zone chung (de dem tong so luong trong lane)
-
+                    
+                    max_speed = self.max_speeds[zone_idx] # lay toc do toi da cho zone hien tai
+                    if max_speed is not None and speed > max_speed:
+                        current_speeding.add(track_id) # them track_id vao danh sach vi pham toc do
+                        detection['speeding'] = True
+                        detection['max_speed'] = max_speed
+    
         for zone_idx in range(len(self.zones)):
             self.zone_counts[zone_idx] = len(current_zone_inside[zone_idx]) # cap nhat count cho moi zone
             self.zone_inside_ids[zone_idx] = current_zone_inside[zone_idx] # cap nhat track_id da dem cho moi zone
             
         self.count = len(current_inside)
         self.inside_ids = current_inside
+        self.speeding_ids = current_speeding
 
     def draw(self, frame):
         overlay = frame.copy() # tạo bản sao của frame để vẽ overlay (vùng lane mờ) mà không làm thay đổi frame gốc
@@ -143,6 +160,17 @@ class LaneZoneCounter:
                         frame,
                         f"Zone {zone_idx + 1}: {self.zone_counts[zone_idx]}",
                         (cx-50, cy),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.5,
+                        colors,
+                        2,
+                    )
+                    
+                if self.max_speeds[zone_idx] is not None:
+                    cv2.putText(
+                        frame,
+                        f"{self.max_speeds[zone_idx]} km/h",
+                        (cx-50, cy+20),
                         cv2.FONT_HERSHEY_SIMPLEX,
                         0.5,
                         colors,

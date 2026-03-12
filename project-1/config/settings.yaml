@@ -59,6 +59,19 @@ counters:
       [128, 0, 128],    # Zone 7: Purple
       [255, 128, 0]     # Zone 8: Orange
     ]
+    max_speeds: [  # Tốc độ tối đa cho từng zone (km/h)
+      80,  # Zone 1 - Làn trên zone 1
+      60,  # Zone 2 - Làn trên zone 2
+      60,  # Zone 3 - Làn trên zone 3
+      40,  # Zone 4 - Làn trên zone 4
+      80,  # Zone 5 - Làn dưới zone 1
+      60,  # Zone 6 - Làn dưới zone 2
+      60,  # Zone 7 - Làn dưới zone 3
+      40,  # Zone 8 - Làn dưới zone 4
+      60,  # Zone 9 - Làn trái zone 1
+      60,  # Zone 10 - Làn trái zone 2
+      10   # Zone 11 - Làn phải
+    ]
 
 tracker:
   type: bytetrack  # bytetrack or strongsort
