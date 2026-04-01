@@ -1,0 +1,45 @@
+app:
+  name: Object Detection and Tracking
+  version: 1.0.0
+  env: production
+
+data:
+  source: inputs/videos
+  output: outputs
+  model: models
+
+input:
+  path: inputs/videos/traffic-drone-top-view.mp4
+  vid_stride: 1 
+  display: true
+  
+detector:
+  type: yolo26n
+  conf_threshold: 0.5
+  iou_threshold: 0.7
+  classes: null  
+  max_det: 100
+  device: null  
+
+counters:
+  - type: line
+    start: [50, 200]
+    end: [1900, 200]
+    color: [0, 255, 0]  # BGR: Green
+  
+saver:
+  save_images: false
+  save_videos: false
+  save_detections: false
+  save_crops: false
+
+tracker:
+  type: bytetrack  # bytetrack or strongsort
+  max_age: 30
+  n_init: 3
+  iou_threshold: 0.3
+
+visualizer:
+  show_detections: true
+  show_tracks: true
+  show_count: true

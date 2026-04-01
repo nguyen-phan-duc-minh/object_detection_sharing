@@ -308,3 +308,32 @@ Nếu có câu hỏi hoặc issues, vui lòng tạo GitHub issue.
 ---
 
 **Happy Coding!**
+| Đối số                          | Loại      | Mặc định | Ý nghĩa chính                                                  |
+| ------------------------------- | --------- | -------- | -------------------------------------------------------------- |
+| `model`                         | str       | None     | Chọn model (.pt hoặc .yaml), quyết định kiến trúc & pretrained |
+| `data`                          | str       | None     | File dataset (.yaml), chứa train/val/classes                   |
+| `epochs`                        | int       | 100      | Số vòng lặp train                                              |
+| `batch`                         | int/float | 16       | Batch size (ảnh hưởng VRAM & tốc độ)                           |
+| `imgsz`                         | int       | 640      | Kích thước ảnh train                                           |
+| `lr0`                           | float     | 0.01     | Learning rate ban đầu (rất quan trọng)                         |
+| `lrf`                           | float     | 0.01     | Learning rate cuối                                             |
+| `optimizer`                     | str       | auto     | Bộ tối ưu (SGD, AdamW,...)                                     |
+| `momentum`                      | float     | 0.937    | Động lượng (SGD/Adam)                                          |
+| `weight_decay`                  | float     | 0.0005   | Giảm overfitting                                               |
+| `pretrained`                    | bool/str  | True     | Có dùng weight pretrained không                                |
+| `freeze`                        | int/list  | None     | Đóng băng layer (transfer learning)                            |
+| `device`                        | str/int   | None     | GPU/CPU sử dụng                                                |
+| `workers`                       | int       | 8        | Số luồng load data                                             |
+| `cache`                         | bool      | False    | Load data vào RAM để tăng tốc                                  |
+| `amp`                           | bool      | True     | Mixed precision → nhanh hơn, ít VRAM                           |
+| `cos_lr`                        | bool      | False    | Scheduler cosine (ổn định training)                            |
+| `warmup_epochs`                 | float     | 3.0      | Warmup learning rate                                           |
+| `patience`                      | int       | 100      | Early stopping                                                 |
+| `augment (mosaic/close_mosaic)` | int       | 10       | Tắt mosaic ở cuối để ổn định                                   |
+| `multi_scale`                   | float     | 0.0      | Train đa kích thước ảnh                                        |
+| `box`                           | float     | 7.5      | Trọng số loss bbox                                             |
+| `cls`                           | float     | 0.5      | Trọng số loss phân loại                                        |
+| `dfl`                           | float     | 1.5      | Loss cho localization chi tiết                                 |
+| `val`                           | bool      | True     | Có validate hay không                                          |
+| `save`                          | bool      | True     | Lưu model                                                      |
+| `resume`                        | bool      | False    | Train tiếp từ checkpoint                                       |

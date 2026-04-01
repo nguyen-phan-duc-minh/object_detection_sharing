@@ -6,15 +6,15 @@ from counter import LaneZoneCounter
 from visualize import draw_boxes
 from saver import ResultSaver
 
-VIDEO_PATH = "inputs/videos/traffic-drone-top-view.mp4"
-VID_STRIDE = 2  # Xử lý mỗi 2 frame để tăng tốc
+VIDEO_PATH = "inputs/videos/video_playback_2.mp4"
+VID_STRIDE = 1  # Xử lý mỗi 2 frame để tăng tốc
 
 def main():
     detector = YOLODetector(
         "models/best.pt",
         conf=0.5,  # Mặc định đã tốt, có thể uncomment để tùy chỉnh
         iou=0.5,
-        classes=[2, 3, 5, 7],  # car, motorcycle, bus, truck (không detect person)
+        classes=None,  # Model custom: để None để detect tất cả class trong model
         max_det=100,
     )
     saver = ResultSaver(

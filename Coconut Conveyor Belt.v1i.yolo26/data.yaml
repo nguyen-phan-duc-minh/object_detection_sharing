@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 1
+names: ['Coconut-Conveyor-Belt']
+
+roboflow:
+  workspace: dataset-bweu8
+  project: coconut-conveyor-belt
+  version: 1
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/dataset-bweu8/coconut-conveyor-belt/dataset/1
