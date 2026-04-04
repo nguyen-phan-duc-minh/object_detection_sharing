@@ -1,11 +1,11 @@
 import cv2
 import numpy as np
-    
+
 class ZoneCounter:
     def __init__(self, top_left, bottom_right, color=None):
         self.top_left = top_left
         self.bottom_right = bottom_right
-        self.color = tuple(color) if color else (255, 0, 0)  # Màu mặc định: Blue
+        self.color = tuple(color) if color else (0, 255, 0)  # Màu mặc định: Green
         self.count = 0
         self.inside_ids = set()  # tránh đếm trùng
 
@@ -59,63 +59,48 @@ class ZoneCounter:
     
 class LaneZoneCounter:
     def __init__(self, points, frame_shape, colors=None, max_speeds=None):
-        # Hỗ trợ nhiều zones: points có thể là list of zones [[zone1_points], [zone2_points], ...]
-        # hoặc một zone duy nhất [points]
-        if len(points) > 0 and isinstance(points[0][0], (list, tuple)): # nếu nhiều zone [[(x1, y1), (x2, y2), ...], [(x3, y3), (x4, y4), ...], ...]
-            # Nhiều zones - points là list 3 chiều
-            # points = [
-                # [(x1, y1), (x2, y2), (x3, y3), (x4, y4)], 
-                # [(x5, y5), (x6, y6), (x7, y7), (x8, y8)], 
-            # ...]
+        if len(points) > 0 and isinstance(points[0][0], (list, tuple)):
             self.zones = [np.array(zone, dtype=np.int32) for zone in points]
             self.is_multi_zone = True
-        else:
-            # Một zone duy nhất - points là list 2 chiều - [(x1, y1), (x2, y2), ...]
-            self.zones = [np.array(points, dtype=np.int32)]
+        else: # points[0]
+            self.zones = [np.array(points, dtype=np.int32)] # np.array de chuyen list thanh array, dtype=np.int32 de chuyen cac toa do thanh so nguyen
             self.is_multi_zone = False
         
-        # Xử lý colors từ settings
         if colors is None:
-            # Màu mặc định nếu không có trong settings
-            # self.zones = [zone1, zone2, zone3, zone4] -> len(self.zones) = 4 -> 0,1,2,3 -> 4 màu lặp lại
             default_colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 255), (0, 255, 255)]
             self.colors = [default_colors[i % len(default_colors)] for i in range(len(self.zones))]
         elif isinstance(colors[0], (list, tuple)):
-            # Nhiều màu cho nhiều zones
             self.colors = [tuple(color) for color in colors]
         else:
-            # Một màu duy nhất cho tất cả zones
             self.colors = [tuple(colors)] * len(self.zones)
         
-        # Xử lý max_speeds từ settings (tốc độ tối đa cho từng zone)
-        # max_speeds = [80, 60, 60, 40, ...] (km/h)
         if max_speeds is None:
-            self.max_speeds = [None] * len(self.zones)  # None = không giới hạn tốc độ
+            self.max_speeds = [None] * len(self.zones)
         else:
             self.max_speeds = max_speeds
-            # Đảm bảo số lượng max_speeds khớp với số zones
-            if len(self.max_speeds) < len(self.zones):
-                # Nếu thiếu, thêm None vào cuối
-                self.max_speeds.extend([None] * (len(self.zones) - len(self.max_speeds)))
-            
+            if len(max_speeds) < len(self.zones):
+                self.max_speeds += [None] * (len(self.zones) - len(max_speeds))
+        
         self.count = 0
         self.inside_ids = set()  # tránh đếm trùng
-        self.zone_counts = [0] * len(self.zones)  # đếm riêng cho từng zone
-        self.zone_inside_ids = [set() for _ in range(len(self.zones))]  # track IDs cho từng zone
-        self.speeding_ids = set()  # Track IDs của các xe đang vượt quá tốc độ
+        self.zone_counts = [0] * len(self.zones) # dem so luong object trong moi zone (neu co nhieu zone)
+        self.zone_inside_ids = [set() for _ in range(len(self.zones))] # luu track_id cua cac object da dem trong moi zone (neu co nhieu zone)
+        self.speeding_ids = set() # luu track_id cua cac object vi pham toc do (neu co max_speeds)
 
-        # tạo mask cho tất cả các zones
-        h, w = frame_shape[:2]
-        self.masks = []
+        # tạo mask theo kích thước frame
+        h, w = frame_shape[:2] # [:2] la de lay height va width thoi, khong can den so kenh
+        self.mask = [] # tao mask den, co cung kich thuoc voi frame, dtype=np.uint8 de chuyen mask thanh so nguyen 8 bit (0-255)
+
         for zone_points in self.zones:
-            mask = np.zeros((h, w), dtype=np.uint8)
-            cv2.fillPoly(mask, [zone_points], 255)
-            self.masks.append(mask)
+            zone_mask = np.zeros((h, w), dtype=np.uint8) # tao mask den moi zone
+            # tô polygon vào mask
+            cv2.fillPoly(zone_mask, [zone_points], 255) # fillPoly de to polygon vao mask, [zone_points] de chuyen points thanh dang list de fillPoly co the nhan, 255 la gia tri de to (trang)
+            self.mask.append(zone_mask)
 
     def update(self, detections):
         current_inside = set()
-        current_zone_inside = [set() for _ in range(len(self.zones))]
-        current_speeding = set()  # Xe đang vượt quá tốc độ
+        current_zone_inside = [set() for _ in range(len(self.zones))] # luu track_id cua cac object hien dang o trong moi zone (neu co nhieu zone)
+        current_speeding = set() # luu track_id cua cac object hien dang vi pham toc do (neu co max_speeds)
         self.centers = []
 
         for detection in detections:
@@ -123,105 +108,75 @@ class LaneZoneCounter:
             track_id = detection["track_id"]
             cx = int((x1 + x2) / 2)
             cy = int((y1 + y2) / 2)
-            speed = detection.get('speed', 0)  # Lấy speed từ detection (đã được thêm bởi SpeedEstimator)
+            speed = detection.get('speed', 0) # lay speed tu detection (da duoc them boi SpeedEstimator)
 
             self.centers.append((cx, cy))
-            
-            # Kiểm tra từng zone
-            for zone_idx, mask in enumerate(self.masks):
+                
+            for zone_idx, mask in enumerate(self.mask):
                 # tránh out-of-bounds
                 if cy >= mask.shape[0] or cx >= mask.shape[1]:
                     continue
 
-                # nếu nằm trong zone mask này
+                # nếu nằm trong lane mask
                 if mask[cy, cx] == 255:
-                    current_zone_inside[zone_idx].add(track_id)
-                    current_inside.add(track_id)
+                    current_zone_inside[zone_idx].add(track_id) # them track_id vao zone hien tai
+                    current_inside.add(track_id) # them track_id vao zone chung (de dem tong so luong trong lane)
                     
-                    # Kiểm tra tốc độ vượt quá
-                    max_speed = self.max_speeds[zone_idx]
+                    max_speed = self.max_speeds[zone_idx] # lay toc do toi da cho zone hien tai
                     if max_speed is not None and speed > max_speed:
-                        current_speeding.add(track_id)
-                        # Thêm flag vào detection để visualization sử dụng
+                        current_speeding.add(track_id) # them track_id vao danh sach vi pham toc do
                         detection['speeding'] = True
                         detection['max_speed'] = max_speed
-
-        # Cập nhật count cho từng zone
-        # current_zone_inside = [
-        #     {1, 5},        # zone 0 có object ID 1 và 5 -> self.zone_counts[0] = 2, self.zone_inside_ids[0] = {1,5}
-        #     {2},           # zone 1 có object ID 2 -> self.zone_counts[1] = 1, self.zone_inside_ids[1] = {2}
-        #     {3, 4, 6}      # zone 2 có 3 object -> self.zone_counts[2] = 3, self.zone_inside_ids[2] = {3, 4, 6}   
-        # ]
+    
         for zone_idx in range(len(self.zones)):
-            self.zone_counts[zone_idx] = len(current_zone_inside[zone_idx])
-            self.zone_inside_ids[zone_idx] = current_zone_inside[zone_idx]
+            self.zone_counts[zone_idx] = len(current_zone_inside[zone_idx]) # cap nhat count cho moi zone
+            self.zone_inside_ids[zone_idx] = current_zone_inside[zone_idx] # cap nhat track_id da dem cho moi zone
             
-        # Tổng count của tất cả zones
         self.count = len(current_inside)
         self.inside_ids = current_inside
         self.speeding_ids = current_speeding
 
     def draw(self, frame):
-        overlay = frame.copy()
+        overlay = frame.copy() # tạo bản sao của frame để vẽ overlay (vùng lane mờ) mà không làm thay đổi frame gốc
         
         for cx, cy in self.centers:
             cv2.circle(frame, (cx, cy), 4, (0, 255, 255), -1)
-        
-        # Vẽ tất cả các zones với màu từ settings
+
         for zone_idx, zone_points in enumerate(self.zones):
-            # Sử dụng modulo để cycle màu nếu không đủ
-            color = self.colors[zone_idx % len(self.colors)]
+            colors = self.colors[zone_idx % len(self.colors)] # lấy màu tương ứng cho zone hiện tại
+            # tô vùng lane mờ
+            cv2.fillPoly(overlay, [zone_points], colors) # tô polygon vào overlay, colors là màu của zone
             
-            # tô vùng zone mờ
-            cv2.fillPoly(overlay, [zone_points], color)
-            
-            # vẽ viền zone
-            cv2.polylines(frame, [zone_points], True, color, 2)
-            
-            # Text counter cho từng zone (nếu có nhiều zones)
+            # vẽ viền lane
+            cv2.polylines(frame, [zone_points], True, colors, 2) # vẽ viền polygon, True là để đóng polygon, colors là màu của zone, 2 là độ dày của viền
+
+            # text counter
             if self.is_multi_zone:
-                # Tính vị trí text ở giữa zone
-                # Moments giúp ta tính: 
-                #   + Diện tích 
-                #   + Tâm (centroid) 
-                #   + Các đặc trưng hình học
-                # M = {
-                #   "m00": diện tích,
-                #   "m10": tổng x có trọng số,
-                #   "m01": tổng y có trọng số,
-                #   ...
-                # }
-                # Công thức tọa độ tâm:
-                #   + cx = int(M["m10"] / M["m00"])
-                #   + cy = int(M["m01"] / M["m00"])     
                 M = cv2.moments(zone_points)
                 if M["m00"] != 0:
                     cx = int(M["m10"] / M["m00"])
                     cy = int(M["m01"] / M["m00"])
-                    
-                    # Dòng 1: Hiển thị số lượng xe trong zone
                     cv2.putText(
                         frame,
-                        f"Zone {zone_idx+1}: {self.zone_counts[zone_idx]}",
-                        (cx-50, cy), 
+                        f"Zone {zone_idx + 1}: {self.zone_counts[zone_idx]}",
+                        (cx-50, cy),
                         cv2.FONT_HERSHEY_SIMPLEX,
-                        0.6,
-                        color,
+                        0.5,
+                        colors,
                         2,
                     )
                     
-                    # Dòng 2: Hiển thị tốc độ tối đa (nếu có)
-                    if self.max_speeds[zone_idx] is not None:
-                        cv2.putText(
-                            frame,
-                            f"{self.max_speeds[zone_idx]} km/h",
-                            (cx-50, cy + 25), 
-                            cv2.FONT_HERSHEY_SIMPLEX,
-                            0.6,
-                            color,
-                            2,
-                        )
-        
-        frame = cv2.addWeighted(overlay, 0.1, frame, 1.0, 0)
+                if self.max_speeds[zone_idx] is not None:
+                    cv2.putText(
+                        frame,
+                        f"{self.max_speeds[zone_idx]} km/h",
+                        (cx-50, cy+20),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.5,
+                        colors,
+                        2,
+                    )
+                    
+        frame = cv2.addWeighted(overlay, 0.2, frame, 0.8, 0) # gộp overlay với frame gốc để tạo hiệu ứng mờ cho vùng lane   
 
         return frame

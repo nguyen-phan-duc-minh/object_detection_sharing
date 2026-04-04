@@ -9,29 +9,29 @@ data:
   model: models
 
 input:
-  path: inputs/videos/traffic-drone-top-view.mp4
+  path: inputs/videos/videoplayback.mp4
   vid_stride: 1 
-  display: true
-  
+  display: true  
+
 detector:
   type: yolo26n
   conf_threshold: 0.5
   iou_threshold: 0.7
-  classes: null  
+  classes: null  # null for all classes, or list like [0, 2] for specific classes
   max_det: 100
-  device: null  
+  device: null  # null for auto, or 'cpu', 'cuda', 'mps'
+
+saver:
+  save_images: false
+  save_videos: false
+  save_detections: false
+  save_crops: false
 
 counters:
   - type: line
     start: [50, 200]
     end: [1900, 200]
     color: [0, 255, 0]  # BGR: Green
-  
-saver:
-  save_images: false
-  save_videos: false
-  save_detections: false
-  save_crops: false
 
 tracker:
   type: bytetrack  # bytetrack or strongsort

@@ -4,6 +4,7 @@ formatters:
   simple:
     format: '[%(asctime)s] %(levelname)s - %(name)s - %(message)s'
     datefmt: '%Y-%m-%d %H:%M:%S'
+    # format : vi du: [2024-06-01 12:00:00] INFO - detector - Detected 5 objects in the frame.
 
 handlers:
   console:

@@ -1,18 +1,19 @@
+import os
 import yaml
 from pathlib import Path
 from dotenv import load_dotenv
-import os
 
 def load_settings():
     env_path = Path(".env")
     if env_path.exists():
         load_dotenv(dotenv_path=env_path)
-        
+    
     config_path = Path("config/settings.yaml")
     with open(config_path) as file:
         settings = yaml.safe_load(file)
-        
-   # App settings
+    
+    # Override with environment variables
+    # App settings
     if os.getenv("APP_ENV"):
         settings["app"]["env"] = os.getenv("APP_ENV")
     if os.getenv("APP_NAME"):
@@ -25,6 +26,14 @@ def load_settings():
         settings["data"]["output"] = os.getenv("DATA_OUTPUT")
     if os.getenv("DATA_MODEL"):
         settings["data"]["model"] = os.getenv("DATA_MODEL")
+        
+    # Input settings
+    if os.getenv("INPUT_PATH"):
+        settings["input"]["path"] = os.getenv("INPUT_PATH")
+    if os.getenv("INPUT_VID_STRIDE"):
+        settings["input"]["vid_stride"] = int(os.getenv("INPUT_VID_STRIDE"))
+    if os.getenv("INPUT_DISPLAY"):
+        settings["input"]["display"] = os.getenv("INPUT_DISPLAY").lower() == "true"
     
     # Detector settings
     if os.getenv("DETECTOR_TYPE"):
@@ -35,11 +44,11 @@ def load_settings():
         settings["detector"]["iou_threshold"] = float(os.getenv("DETECTOR_IOU_THRESHOLD"))
     if os.getenv("DETECTOR_MAX_DET"):
         detector_max_det_str = os.getenv("DETECTOR_MAX_DET")
-        if detector_max_det_str.lower() != "null":
+        if detector_max_det_str.lower() not in ["null", "none"]:
             settings["detector"]["max_det"] = int(detector_max_det_str)
     if os.getenv("DETECTOR_DEVICE"):
         device_str = os.getenv("DETECTOR_DEVICE")
-        settings["detector"]["device"] = None if device_str.lower() == "null" else device_str
+        settings["detector"]["device"] = None if device_str.lower() in ["null", "none"] else device_str
     if os.getenv("DETECTOR_CLASSES"):
         # Parse comma-separated class IDs
         classes_str = os.getenv("DETECTOR_CLASSES")
@@ -47,14 +56,6 @@ def load_settings():
             settings["detector"]["classes"] = [int(x.strip()) for x in classes_str.split(",")]
         else:
             settings["detector"]["classes"] = None
-    
-    # Input settings
-    if os.getenv("INPUT_PATH"):
-        settings["input"]["path"] = os.getenv("INPUT_PATH")
-    if os.getenv("INPUT_VID_STRIDE"):
-        settings["input"]["vid_stride"] = int(os.getenv("INPUT_VID_STRIDE"))
-    if os.getenv("INPUT_DISPLAY"):
-        settings["input"]["display"] = os.getenv("INPUT_DISPLAY").lower() == "true"
     
     # Saver settings
     if os.getenv("SAVER_SAVE_IMAGES"):

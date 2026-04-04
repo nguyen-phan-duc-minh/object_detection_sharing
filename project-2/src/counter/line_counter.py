@@ -21,24 +21,24 @@ class LineCounter:
             active_ids.add(track_id)
 
             self.centers.append((cx, cy))
-
+            
             prev_side = self.prev_side_by_id.get(track_id)
             curr_side = cy - self.start[1]
-
+            
             crossed = False
             if prev_side is not None:
                 crossed = (prev_side < 0 <= curr_side) or (prev_side > 0 >= curr_side)
-
+                
             if crossed and track_id not in self.counted_ids:
                 self.count += 1
                 self.counted_ids.add(track_id)
-
+                
             self.prev_side_by_id[track_id] = curr_side
-
+        
         stale_ids = [tid for tid in self.prev_side_by_id if tid not in active_ids]
         for tid in stale_ids:
             del self.prev_side_by_id[tid]
-
+            
     def _crossed_line(self, x, y):
         return abs(y - self.start[1]) < 5
 

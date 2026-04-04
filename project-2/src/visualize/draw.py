@@ -7,10 +7,10 @@ def draw_boxes(frame, detections, class_names):
         cls_id = detection["class"]
 
         label = class_names[cls_id]
+        text = f"{label} - {detection['track_id']} - {conf:.2f}" # car - 0.85
+       
+        box_color = (0, 255 ,0)  # BGR: Red or Blue
         
-        text = f"{label} - {detection['track_id']} - {conf:.2f}"
-        box_color = (255, 0, 0)
-
         # Vẽ box
         cv2.rectangle(frame, (x1, y1), (x2, y2), box_color, 2) # frame, vi tri bat dau, vi tri ket thuc, mau sac, do day
 
