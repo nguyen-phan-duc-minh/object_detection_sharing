@@ -28,10 +28,10 @@ saver:
   save_crops: false
 
 counters:
-  - type: line
-    start: [50, 200]
-    end: [1900, 200]
-    color: [0, 255, 0]  # BGR: Green
+  - type: lane
+    points: [
+      [[480, 380], [790, 340], [950, 480], [730, 530]],
+    ]
 
 tracker:
   type: bytetrack  # bytetrack or strongsort

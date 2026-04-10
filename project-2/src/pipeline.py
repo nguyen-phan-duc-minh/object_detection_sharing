@@ -100,7 +100,7 @@ class DetectionPipeline:
                 self.counter.update(detections)
             
             # Visualize
-            frame = draw_boxes(frame, detections, self.detector.model.names)
+            # frame = draw_boxes(frame, detections, self.detector.model.names)
             if self.counter:
                 frame = self.counter.draw(frame)
             

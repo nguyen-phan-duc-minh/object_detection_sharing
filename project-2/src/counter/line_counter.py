@@ -46,14 +46,14 @@ class LineCounter:
         for cx, cy in self.centers:
             cv2.circle(frame, (cx, cy), 4, (0, 255, 255), -1)
             
-        cv2.line(frame, self.start, self.end, self.color, 2)
+        cv2.line(frame, self.start, self.end, self.color, 4)
         cv2.putText(
             frame,
             f"Count: {self.count}",
-            (20, 40),
+            (20, 80),
             cv2.FONT_HERSHEY_SIMPLEX,
-            1,
+            3, # scale
             self.color,
-            2,
+            5, # do day
         )
         return frame
