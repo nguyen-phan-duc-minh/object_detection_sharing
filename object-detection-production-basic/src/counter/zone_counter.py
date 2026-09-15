@@ -145,6 +145,15 @@ class LaneZoneCounter:
                         # Thêm flag vào detection để visualization sử dụng
                         detection['speeding'] = True
                         detection['max_speed'] = max_speed
+            
+            # for mask in self.mask:
+            #     # tránh out-of-bounds
+            #     if cy >= mask.shape[0] or cx >= mask.shape[1]:
+            #         continue
+
+            #     # nếu nằm trong lane mask
+            #     if mask[cy, cx] == 255:
+            #         current_inside.add(track_id) # them track_id vao zone chung (de dem tong so luong trong lane)
 
         # Cập nhật count cho từng zone
         # current_zone_inside = [
@@ -160,6 +169,12 @@ class LaneZoneCounter:
         self.count = len(current_inside)
         self.inside_ids = current_inside
         self.speeding_ids = current_speeding
+        
+        # new_ids = current_inside - self.counted_ids
+        # if new_ids:
+        #     self.count += len(new_ids)
+        #     self.counted_ids.update(new_ids)
+        # self.inside_ids = current_inside
 
     def draw(self, frame):
         overlay = frame.copy()
@@ -179,49 +194,59 @@ class LaneZoneCounter:
             cv2.polylines(frame, [zone_points], True, color, 2)
             
             # Text counter cho từng zone (nếu có nhiều zones)
-            if self.is_multi_zone:
-                # Tính vị trí text ở giữa zone
-                # Moments giúp ta tính: 
-                #   + Diện tích 
-                #   + Tâm (centroid) 
-                #   + Các đặc trưng hình học
-                # M = {
-                #   "m00": diện tích,
-                #   "m10": tổng x có trọng số,
-                #   "m01": tổng y có trọng số,
-                #   ...
-                # }
-                # Công thức tọa độ tâm:
-                #   + cx = int(M["m10"] / M["m00"])
-                #   + cy = int(M["m01"] / M["m00"])     
-                M = cv2.moments(zone_points)
-                if M["m00"] != 0:
-                    cx = int(M["m10"] / M["m00"])
-                    cy = int(M["m01"] / M["m00"])
+            # if self.is_multi_zone:
+            #     # Tính vị trí text ở giữa zone
+            #     # Moments giúp ta tính: 
+            #     #   + Diện tích 
+            #     #   + Tâm (centroid) 
+            #     #   + Các đặc trưng hình học
+            #     # M = {
+            #     #   "m00": diện tích,
+            #     #   "m10": tổng x có trọng số,
+            #     #   "m01": tổng y có trọng số,
+            #     #   ...
+            #     # }
+            #     # Công thức tọa độ tâm:
+            #     #   + cx = int(M["m10"] / M["m00"])
+            #     #   + cy = int(M["m01"] / M["m00"])     
+            #     M = cv2.moments(zone_points)
+            #     if M["m00"] != 0:
+            #         cx = int(M["m10"] / M["m00"])
+            #         cy = int(M["m01"] / M["m00"])
                     
-                    # Dòng 1: Hiển thị số lượng xe trong zone
-                    cv2.putText(
-                        frame,
-                        f"Zone {zone_idx+1}: {self.zone_counts[zone_idx]}",
-                        (cx-50, cy), 
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        0.6,
-                        color,
-                        2,
-                    )
+            #         # Dòng 1: Hiển thị số lượng xe trong zone
+            #         cv2.putText(
+            #             frame,
+            #             f"Zone {zone_idx+1}: {self.zone_counts[zone_idx]}",
+            #             (cx-50, cy), 
+            #             cv2.FONT_HERSHEY_SIMPLEX,
+            #             0.6,
+            #             color,
+            #             2,
+            #         )
                     
-                    # Dòng 2: Hiển thị tốc độ tối đa (nếu có)
-                    if self.max_speeds[zone_idx] is not None:
-                        cv2.putText(
-                            frame,
-                            f"{self.max_speeds[zone_idx]} km/h",
-                            (cx-50, cy + 25), 
-                            cv2.FONT_HERSHEY_SIMPLEX,
-                            0.6,
-                            color,
-                            2,
-                        )
+            #         # Dòng 2: Hiển thị tốc độ tối đa (nếu có)
+            #         if self.max_speeds[zone_idx] is not None:
+            #             cv2.putText(
+            #                 frame,
+            #                 f"{self.max_speeds[zone_idx]} km/h",
+            #                 (cx-50, cy + 25), 
+            #                 cv2.FONT_HERSHEY_SIMPLEX,
+            #                 0.6,
+            #                 color,
+            #                 2,
+            #             )
         
         frame = cv2.addWeighted(overlay, 0.1, frame, 1.0, 0)
+        
+        cv2.putText(
+            frame,
+            f"Total passed: {self.count}",
+            (20, 100),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            3,
+            (0, 255, 255),
+            4,
+        )
 
         return frame

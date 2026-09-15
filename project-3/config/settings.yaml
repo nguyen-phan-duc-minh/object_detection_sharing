@@ -1,0 +1,91 @@
+app:
+  name: Object Detection and Tracking
+  version: 1.0.0
+  env: production
+
+data:
+  source: inputs/videos
+  output: outputs
+  model: models
+
+input:
+  path: inputs/videos/videoplayback.mp4
+  vid_stride: 1 
+  display: true  
+
+detector:
+  type: yolo26n
+  conf_threshold: 0.5
+  iou_threshold: 0.7
+  classes: null  # null for all classes, or list like [0, 2] for specific classes
+  max_det: 100
+  device: null  # null for auto, or 'cpu', 'cuda', 'mps'
+
+saver:
+  save_images: false
+  save_videos: false
+  save_detections: false
+  save_crops: false
+
+counters:
+  - type: lane
+    points: [
+      # Zone 1 - Làn trên
+      [[770, 280], [870, 280], [870, 0], [770, 0]],
+      [[870, 280], [970, 280], [970, 0], [870, 0]],
+      [[1020, 280], [1120, 280], [1120, 0], [1020, 0]],
+      [[1120, 280], [1220, 280], [1220, 0], [1120, 0]],
+
+      # Zone 2 - Làn dưới
+      [[770, 1080], [870, 1080], [870, 830], [770, 830]],
+      [[870, 1080], [970, 1080], [970, 830], [870, 830]],
+      [[1020, 1080], [1120, 1080], [1120, 830], [1020, 830]],
+      [[1120, 1080], [1220, 1080], [1220, 830], [1120, 830]],
+
+      # Zone 3 - Làn trái
+      [[0, 420], [620, 420], [620, 570], [0, 570]],
+      [[0, 570], [620, 570], [620, 680], [0, 680]],
+
+      # Zone 3 - Làn trái
+      [[1340, 480], [1980, 480], [1980, 570], [1340, 570]],
+    ]
+    colors: [  # Màu riêng cho từng zone (8 zones = 8 màu)
+      [255, 0, 0],      # Zone 1: Blue
+      [0, 255, 0],      # Zone 2: Green  
+      [0, 0, 255],      # Zone 3: Red
+      [255, 255, 0],    # Zone 4: Cyan
+      [255, 0, 255],    # Zone 5: Magenta
+      [0, 255, 255],    # Zone 6: Yellow
+      [128, 0, 128],    # Zone 7: Purple
+      [255, 128, 0]     # Zone 8: Orange
+    ]
+    max_speeds: [  # Tốc độ tối đa cho từng zone (km/h)
+      80,  # Zone 1 - Làn trên zone 1
+      60,  # Zone 2 - Làn trên zone 2
+      60,  # Zone 3 - Làn trên zone 3
+      40,  # Zone 4 - Làn trên zone 4
+      80,  # Zone 5 - Làn dưới zone 1
+      60,  # Zone 6 - Làn dưới zone 2
+      60,  # Zone 7 - Làn dưới zone 3
+      40,  # Zone 8 - Làn dưới zone 4
+      60,  # Zone 9 - Làn trái zone 1
+      60,  # Zone 10 - Làn trái zone 2
+      10   # Zone 11 - Làn phải
+    ]
+
+tracker:
+  type: bytetrack  # bytetrack or strongsort
+  max_age: 30
+  n_init: 3
+  iou_threshold: 0.3
+
+visualizer:
+  show_detections: true
+  show_tracks: true
+  show_count: true
+
+speed:
+  enabled: true  
+  fps: 30
+  pixel_per_meter: 21.7
+  smooth_window: 5
